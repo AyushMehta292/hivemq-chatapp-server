@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import authRoutes from './routes/authRoutes.js';
 
 const app = express();
 
@@ -29,8 +31,21 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: 429,
+  message: { message: 'Too many attempts, please try again later' },
+  skip: (req) => req.method === 'OPTIONS',
+});
+app.use('/api/auth', authLimiter);
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/api/auth', authRoutes);
 
 export default app;
