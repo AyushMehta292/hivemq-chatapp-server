@@ -1,6 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { register, login } from '../controllers/authController.js';
+import { register, verifyEmail, login, refresh, logout, forgotPassword, resetPassword } from '../controllers/authController.js';
+import { authenticate } from '../middleware/authenticate.js';
 
 const router = express.Router();
 
@@ -24,6 +25,16 @@ router.post(
 );
 
 router.post(
+  '/verify-email',
+  [
+    body('email').isEmail().normalizeEmail(),
+    body('otp').isLength({ min: 6, max: 6 }).isNumeric(),
+  ],
+  validate,
+  verifyEmail
+);
+
+router.post(
   '/login',
   [
     body('emailOrUsername').trim().notEmpty(),
@@ -31,6 +42,27 @@ router.post(
   ],
   validate,
   login
+);
+
+router.post('/refresh', refresh);
+router.post('/logout', authenticate, logout);
+
+router.post(
+  '/forgot-password',
+  [body('email').isEmail().normalizeEmail()],
+  validate,
+  forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  [
+    body('email').isEmail().normalizeEmail(),
+    body('otp').isLength({ min: 6, max: 6 }).isNumeric(),
+    body('newPassword').isLength({ min: 6 }),
+  ],
+  validate,
+  resetPassword
 );
 
 export default router;
