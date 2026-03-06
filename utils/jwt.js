@@ -17,5 +17,14 @@ export const verifyAccessToken = (token) => {
 };
 
 export const verifyRefreshToken = (token) => {
-  return jwt.verify(token, JWT_SECRET);
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      const e = new Error('Refresh token expired');
+      e.name = 'TokenExpiredError';
+      throw e;
+    }
+    throw err;
+  }
 };

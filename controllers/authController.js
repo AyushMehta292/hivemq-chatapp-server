@@ -152,11 +152,15 @@ export const refresh = async (req, res) => {
     if (!token) {
       return res.status(401).json({ message: 'Refresh token required' });
     }
-    const decoded = verifyRefreshToken(token);
     const stored = await RefreshToken.findOne({ token });
     if (!stored) {
       return res.status(401).json({ message: 'Refresh token invalid or revoked' });
     }
+    if (new Date() > stored.expiresAt) {
+      await RefreshToken.deleteOne({ token });
+      return res.status(401).json({ message: 'Refresh token expired' });
+    }
+    const decoded = verifyRefreshToken(token);
     const user = await User.findById(decoded.userId).select('email').lean();
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
