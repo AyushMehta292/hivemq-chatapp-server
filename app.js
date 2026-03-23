@@ -6,6 +6,8 @@ import authRoutes from './routes/authRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import { authenticate } from './middleware/authenticate.js';
+import { getMQTTConfig } from './controllers/mqttConfigController.js';
 
 const app = express();
 
@@ -48,6 +50,7 @@ app.use('/api/auth', authLimiter);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+app.get('/api/mqtt-config', authenticate, getMQTTConfig);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
