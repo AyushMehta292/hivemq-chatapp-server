@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Message from '../models/Message.js';
 
 export const EDIT_DELETE_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
@@ -7,6 +8,9 @@ export const requireMessageSenderAndWithinWindow = async (req, res, next) => {
     const messageId = req.params.messageId;
     if (!messageId) {
       return res.status(400).json({ message: 'Message ID required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(messageId)) {
+      return res.status(400).json({ message: 'Invalid message ID' });
     }
     const message = await Message.findById(messageId);
     if (!message) {

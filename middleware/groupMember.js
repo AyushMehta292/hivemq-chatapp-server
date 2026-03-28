@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Group from '../models/Group.js';
 
 export const requireGroupMember = async (req, res, next) => {
@@ -5,6 +6,9 @@ export const requireGroupMember = async (req, res, next) => {
     const groupId = req.params.groupId || req.body?.groupId;
     if (!groupId) {
       return res.status(400).json({ message: 'Group ID required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      return res.status(400).json({ message: 'Invalid group ID' });
     }
     const group = await Group.findById(groupId);
     if (!group) {
@@ -28,6 +32,9 @@ export const requireGroupAdmin = async (req, res, next) => {
     const groupId = req.params.groupId || req.body?.groupId;
     if (!groupId) {
       return res.status(400).json({ message: 'Group ID required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(groupId)) {
+      return res.status(400).json({ message: 'Invalid group ID' });
     }
     const group = await Group.findById(groupId);
     if (!group) {
