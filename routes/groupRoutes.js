@@ -2,7 +2,9 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticate } from '../middleware/authenticate.js';
 import { requireGroupMember, requireGroupAdmin } from '../middleware/groupMember.js';
+import { uploadProfilePic } from '../middleware/upload.js';
 import { createGroup, getMyGroups, getOrCreateDirectGroup, getOrCreateSelfGroup, getGroup, updateGroup, leaveGroup } from '../controllers/groupController.js';
+import { updateGroupProfilePic } from '../controllers/groupProfilePicController.js';
 
 const router = express.Router();
 router.use(authenticate);
@@ -37,5 +39,6 @@ router.patch(
   updateGroup
 );
 router.post('/:groupId/leave', requireGroupMember, leaveGroup);
+router.patch('/:groupId/profile-pic', requireGroupMember, uploadProfilePic, updateGroupProfilePic);
 
 export default router;
