@@ -191,9 +191,10 @@ export const logout = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user || !user.isEmailVerified) {
-      return res.json({ message: 'If an account exists, we sent a reset code to your email.' });
+    const normalized = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalized });
+    if (!user) {
+      return res.status(404).json({ message: 'No account found with this email.' });
     }
     await OTPModel.deleteMany({ email: user.email, purpose: 'password_reset' });
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -214,7 +215,7 @@ export const forgotPassword = async (req, res) => {
         message: 'We could not send the reset code. Please try again later.',
       });
     }
-    res.json({ message: 'If an account exists, we sent a reset code to your email.' });
+    res.json({ message: 'We sent a reset code to your email.' });
   } catch (err) {
     res.status(500).json({ message: err.message || 'Request failed' });
   }

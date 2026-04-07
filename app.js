@@ -7,6 +7,7 @@ import groupRoutes from './routes/groupRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import callRoutes from './routes/callRoutes.js';
 import { authenticate } from './middleware/authenticate.js';
 import { getMQTTConfig } from './controllers/mqttConfigController.js';
 
@@ -61,6 +62,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/calls', callRoutes);
 
 app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {

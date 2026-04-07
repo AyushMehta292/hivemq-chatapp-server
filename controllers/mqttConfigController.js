@@ -25,7 +25,7 @@ export const getMQTTConfig = async (req, res) => {
     })
       .select('_id')
       .lean();
-    const topics = groups.map((g) => `chat/group/${g._id}`);
+    const topics = groups.flatMap((g) => [`chat/group/${g._id}`, `chat/call/${g._id}`]);
     res.json({
       url: normalizeMqttUrl(process.env.HIVEMQ_WS_URL),
       username: process.env.HIVEMQ_USER,

@@ -50,3 +50,12 @@ export const publishToGroup = (groupId, payload) => {
     if (err) console.error('MQTT publish error:', err);
   });
 };
+
+export const publishCallSignal = (groupId, payload) => {
+  const c = getMQTTClient();
+  if (!c?.connected) return;
+  const topic = `chat/call/${groupId}`;
+  c.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
+    if (err) console.error('MQTT call publish error:', err);
+  });
+};
