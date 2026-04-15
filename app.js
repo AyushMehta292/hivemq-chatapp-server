@@ -37,6 +37,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+app.use('/api', (req, res, next) => { next(); });
+
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
