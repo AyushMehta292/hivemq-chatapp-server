@@ -51,6 +51,7 @@ const authLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 
 app.get('/api/health', (req, res) => {
+  console.log('Health check request received');
   res.json({ status: 'ok' });
 });
 app.get('/api/mqtt-config', authenticate, getMQTTConfig);
