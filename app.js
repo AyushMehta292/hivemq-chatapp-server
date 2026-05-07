@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
@@ -41,6 +42,20 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+/** Vercel/serverless: ensure Mongo is connected before route handlers (avoids Mongoose query buffering timeout). */
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('[MongoDB]', err.message);
+    res.status(503).json({
+      message: 'Database unavailable',
+      detail: process.env.NODE_ENV !== 'production' ? err.message : undefined,
+    });
+  }
+});
 
 app.use('/api', (req, res, next) => { next(); });
 
