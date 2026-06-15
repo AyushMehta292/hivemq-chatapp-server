@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import groupRoutes from './routes/groupRoutes.js';
@@ -9,6 +10,8 @@ import messageRoutes from './routes/messageRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import callRoutes from './routes/callRoutes.js';
+import pushRoutes from './routes/pushRoutes.js';
+import { initPush } from './services/pushService.js';
 import { authenticate } from './middleware/authenticate.js';
 import { getMQTTConfig } from './controllers/mqttConfigController.js';
 
@@ -70,9 +73,19 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth', authLimiter);
 
-app.get('/api/health', (req, res) => {
-  console.log('Health check request received');
-  res.json({ status: 'ok' });
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    await mongoose.connection.db.admin().command({ ping: 1 });
+    res.json({ status: 'ok', db: 'connected' });
+  } catch (err) {
+    console.error('[health]', err.message);
+    res.status(503).json({
+      status: 'error',
+      db: 'disconnected',
+      detail: process.env.NODE_ENV !== 'production' ? err.message : undefined,
+    });
+  }
 });
 app.get('/api/mqtt-config', authenticate, getMQTTConfig);
 
@@ -82,6 +95,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/calls', callRoutes);
+app.use('/api/push', pushRoutes);
 
 app.use((err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {

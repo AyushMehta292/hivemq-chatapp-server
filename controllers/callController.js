@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Call from '../models/Call.js';
 import User from '../models/User.js';
 import { publishCallSignal } from '../services/mqttService.js';
+import { notifyGroupCall } from '../services/pushService.js';
 import { getLiveKitWsUrl, mintParticipantToken, countParticipantsInRoom } from '../services/livekitService.js';
 
 /** Room/token validity — ring + connected time (tokens use 2h TTL on LiveKit side). */
@@ -150,6 +151,13 @@ export const startCall = async (req, res) => {
       initiatorId: req.user._id.toString(),
       initiatorName: initiator?.username || 'Someone',
     });
+
+    notifyGroupCall({
+      group,
+      initiatorId: req.user._id,
+      initiatorName: initiator?.username || 'Someone',
+      callId: callId.toString(),
+    }).catch(() => {});
 
     res.status(201).json({
       callId: callId.toString(),

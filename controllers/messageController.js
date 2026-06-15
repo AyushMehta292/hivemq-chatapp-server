@@ -1,5 +1,14 @@
 import Message from '../models/Message.js';
+import Group from '../models/Group.js';
 import { publishToGroup } from '../services/mqttService.js';
+import { notifyGroupMessage } from '../services/pushService.js';
+
+function messagePreview(content, attachments) {
+  const text = (content || '').trim();
+  if (text) return text.slice(0, 200);
+  if (attachments?.length) return '📎 Attachment';
+  return '';
+}
 
 function normalizeAttachments(attachments) {
   if (!attachments) return [];
@@ -55,6 +64,17 @@ export const sendMessage = async (req, res) => {
     const populated = await Message.findById(message._id)
       .populate('senderId', 'username email profilePic')
       .lean();
+    const preview = messagePreview(populated.content, populated.attachments);
+    await Group.updateOne(
+      { _id: group._id },
+      {
+        $set: {
+          lastMessageAt: populated.createdAt,
+          lastMessagePreview: preview,
+          updatedAt: new Date(),
+        },
+      }
+    );
     const payload = {
       _id: populated._id,
       groupId: String(groupId),
@@ -64,6 +84,12 @@ export const sendMessage = async (req, res) => {
       createdAt: populated.createdAt,
     };
     publishToGroup(groupId, payload);
+    notifyGroupMessage({
+      group,
+      message: populated,
+      senderId: req.user._id,
+      preview,
+    }).catch(() => {});
     res.status(201).json(populated);
   } catch (err) {
     res.status(500).json({ message: err.message || 'Failed to send message' });

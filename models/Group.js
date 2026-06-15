@@ -27,6 +27,16 @@ const groupSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  lastMessageAt: {
+    type: Date,
+    default: null,
+  },
+  lastMessagePreview: {
+    type: String,
+    default: '',
+    trim: true,
+    maxlength: 200,
+  },
 }, {
   timestamps: true,
 });

@@ -34,7 +34,7 @@ export const getMyGroups = async (req, res) => {
     })
       .populate('createdBy', 'username email profilePic')
       .populate('memberIds', 'username email profilePic')
-      .sort({ updatedAt: -1 })
+      .sort({ lastMessageAt: -1, updatedAt: -1 })
       .lean();
     res.json(groups);
   } catch (err) {
