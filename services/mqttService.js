@@ -3,6 +3,7 @@ import mqtt from 'mqtt';
 let client = null;
 
 const DEFAULT_HOST = 'bf88379b1d754c5f9e53b81f7b1b4aa6.s1.eu.hivemq.cloud';
+const PUBLISH_TIMEOUT_MS = 8000;
 
 function normalizeMqttUrl(value) {
   if (!value || typeof value !== 'string') return `wss://${DEFAULT_HOST}:8884/mqtt`;
@@ -42,20 +43,45 @@ export const getMQTTClient = () => {
   return client;
 };
 
-export const publishToGroup = (groupId, payload) => {
+function publishWhenReady(topic, payload) {
   const c = getMQTTClient();
-  if (!c?.connected) return;
-  const topic = `chat/group/${groupId}`;
-  c.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
-    if (err) console.error('MQTT publish error:', err);
+  if (!c) return Promise.resolve();
+
+  const data = JSON.stringify(payload);
+  const doPublish = () =>
+    new Promise((resolve) => {
+      c.publish(topic, data, { qos: 1 }, (err) => {
+        if (err) console.error('MQTT publish error:', err);
+        resolve();
+      });
+    });
+
+  if (c.connected) return doPublish();
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      console.warn(`MQTT publish skipped (timeout): ${topic}`);
+      resolve();
+    }, PUBLISH_TIMEOUT_MS);
+
+    const finish = () => {
+      clearTimeout(timeout);
+      doPublish().then(resolve);
+    };
+
+    if (c.connected) {
+      finish();
+      return;
+    }
+
+    c.once('connect', finish);
   });
+}
+
+export const publishToGroup = (groupId, payload) => {
+  return publishWhenReady(`chat/group/${groupId}`, payload);
 };
 
 export const publishCallSignal = (groupId, payload) => {
-  const c = getMQTTClient();
-  if (!c?.connected) return;
-  const topic = `chat/call/${groupId}`;
-  c.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
-    if (err) console.error('MQTT call publish error:', err);
-  });
+  return publishWhenReady(`chat/call/${groupId}`, payload);
 };

@@ -83,7 +83,9 @@ export const sendMessage = async (req, res) => {
       attachments: populated.attachments,
       createdAt: populated.createdAt,
     };
-    publishToGroup(groupId, payload);
+    publishToGroup(groupId, payload).catch((err) =>
+      console.error('[MQTT] message publish failed:', err?.message || err)
+    );
     notifyGroupMessage({
       group,
       message: populated,
@@ -138,7 +140,9 @@ export const updateMessage = async (req, res) => {
       createdAt: populated.createdAt,
       updatedAt: populated.updatedAt,
     };
-    publishToGroup(populated.groupId, payload);
+    publishToGroup(populated.groupId, payload).catch((err) =>
+      console.error('[MQTT] message update publish failed:', err?.message || err)
+    );
     res.json(populated);
   } catch (err) {
     res.status(500).json({ message: err.message || 'Failed to update message' });
@@ -151,7 +155,9 @@ export const deleteMessage = async (req, res) => {
     const messageId = message._id.toString();
     const groupId = message.groupId.toString();
     await Message.findByIdAndDelete(message._id);
-    publishToGroup(groupId, { action: 'deleted', messageId, groupId });
+    publishToGroup(groupId, { action: 'deleted', messageId, groupId }).catch((err) =>
+      console.error('[MQTT] message delete publish failed:', err?.message || err)
+    );
     res.json({ deleted: true, messageId });
   } catch (err) {
     res.status(500).json({ message: err.message || 'Failed to delete message' });

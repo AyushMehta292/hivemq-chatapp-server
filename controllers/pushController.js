@@ -1,7 +1,8 @@
 import PushSubscription from '../models/PushSubscription.js';
-import { getVapidPublicKey } from '../services/pushService.js';
+import { getVapidPublicKey, initPush } from '../services/pushService.js';
 
 export const getVapidKey = (req, res) => {
+  initPush();
   const key = getVapidPublicKey();
   if (!key) {
     return res.status(503).json({ message: 'Push notifications are not configured on this server' });

@@ -5,6 +5,12 @@ import { publishCallSignal } from '../services/mqttService.js';
 import { notifyGroupCall } from '../services/pushService.js';
 import { getLiveKitWsUrl, mintParticipantToken, countParticipantsInRoom } from '../services/livekitService.js';
 
+function publishCall(groupId, payload) {
+  return publishCallSignal(groupId, payload).catch((err) =>
+    console.error('[MQTT] call signal publish failed:', err?.message || err)
+  );
+}
+
 /** Room/token validity — ring + connected time (tokens use 2h TTL on LiveKit side). */
 const CALL_SESSION_MS = 2 * 60 * 60 * 1000;
 
@@ -51,7 +57,7 @@ async function finalizeCallIfLiveKitRoomEmpty(callLean, opts = {}) {
   if (count > 0) return false;
   const r = await Call.updateOne({ _id: fresh._id, status: { $in: ['ringing', 'active'] } }, { $set: { status: 'ended' } });
   if (r.modifiedCount === 0) return false;
-  publishCallSignal(fresh.groupId.toString(), {
+  publishCall(fresh.groupId.toString(), {
     kind: 'call_ended',
     callId: fresh._id.toString(),
     groupId: fresh.groupId.toString(),
@@ -142,7 +148,7 @@ export const startCall = async (req, res) => {
     });
 
     const initiator = await User.findById(req.user._id).select('username').lean();
-    publishCallSignal(group._id.toString(), {
+    publishCall(group._id.toString(), {
       kind: 'call_invite',
       callId: callId.toString(),
       roomName: livekitRoomName,
@@ -186,7 +192,7 @@ export const getCallToken = async (req, res) => {
     });
 
     if (req.user._id.toString() !== call.initiatorId.toString()) {
-      publishCallSignal(call.groupId.toString(), {
+      publishCall(call.groupId.toString(), {
         kind: 'call_accepted',
         callId: call._id.toString(),
         groupId: call.groupId.toString(),
@@ -223,7 +229,7 @@ export const leaveCall = async (req, res) => {
 export const rejectCall = async (req, res) => {
   try {
     const call = req.call;
-    publishCallSignal(call.groupId.toString(), {
+    publishCall(call.groupId.toString(), {
       kind: 'call_rejected',
       callId: call._id.toString(),
       groupId: call.groupId.toString(),
@@ -240,7 +246,7 @@ export const endCall = async (req, res) => {
   try {
     const call = req.call;
     await Call.updateOne({ _id: call._id }, { status: 'ended' });
-    publishCallSignal(call.groupId.toString(), {
+    publishCall(call.groupId.toString(), {
       kind: 'call_ended',
       callId: call._id.toString(),
       groupId: call.groupId.toString(),

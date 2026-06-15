@@ -40,8 +40,13 @@ function directDisplayName(group, viewerId) {
   return group.name || 'Chat';
 }
 
+function ensurePushReady() {
+  if (!configured) initPush();
+  return configured;
+}
+
 async function sendPushToUserIds(userIds, notification) {
-  if (!configured || !userIds?.length) return;
+  if (!ensurePushReady() || !userIds?.length) return;
   const subs = await PushSubscription.find({ userId: { $in: userIds } }).lean();
   if (!subs.length) return;
 
